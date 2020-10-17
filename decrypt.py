@@ -1,11 +1,6 @@
-import struct
-from ctypes import c_uint32
-
-def tc(num):
-    return (-1)*(255 + 1 - num)
-    
-def generateLFSR(key, seq):
+def generateLFSR(key):
     d = list(key*2)
+    seq=[0,0,0]
 
     seq[0] = 301989938
     seq[1] = 623357073
@@ -22,15 +17,17 @@ def generateLFSR(key, seq):
     seq[1] = seq[1] & 0xffffffff
     seq[2] = seq[2] & 0xffffffff
 
+    return seq
+
 def xorByte(b, seq):
     flag1=1
     flag2=0
     result=0
     for _ in range(0, 8):
-        v10 = (seq[0] >> 1) & 0xffffffff
+        v10 = (seq[0] >> 1)
         if (seq[0] << 31) & 0xffffffff:
             seq[0] = (v10 ^ 0xC0000031)
-            v12 = (seq[1] >> 1) & 0xffffffff
+            v12 = (seq[1] >> 1)
             if (seq[1] << 31) & 0xffffffff:
                 seq[1] = ((v12 | 0xC0000000) ^ 0x20000010)
                 flag1 = 1
@@ -39,7 +36,7 @@ def xorByte(b, seq):
                 flag1 = 0
         else:
             seq[0] = v10
-            v11 = (seq[2] >> 1) & 0xffffffff
+            v11 = (seq[2] >> 1)
             if (seq[2] << 31) & 0xffffffff:
                 seq[2] = ((v11 | 0xF0000000) ^ 0x8000001)
                 flag2 = 1
@@ -48,14 +45,11 @@ def xorByte(b, seq):
                 flag2 = 0
 
         result = (flag1 ^ flag2 | 2 * result)
-
     return (result ^ b)
 
 def xorData(data):
     dat=list(data)
-    s = [0, 0, 0]
-    generateLFSR("a271730728cbe141e47fd9d677e9006d", s)
+    s=generateLFSR("a271730728cbe141e47fd9d677e9006d")
     for i in range(0,128):
         dat[i]=xorByte(dat[i], s)
     return bytes(dat)
-
