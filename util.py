@@ -1,7 +1,10 @@
 import requests
 
-dw_url = "https://item.kakaocdn.net/dw/{eid}.emot_{num:03d}.{ext}"
-exts = ["png", "gif", "webp"]
+image_url = "https://item.kakaocdn.net/dw/{eid}.emot_{num:03d}.{ext}"
+pack_url = "http://item.kakaocdn.net/dw/{eid}.file_pack.zip"
+
+decrypt_required_exts = [".gif", ".webp"]
+no_decrypt_required_exts = [".png"]
 
 def getEmoticonInfo(url):
     html = requests.get(url, headers={"User-Agent":"Android"}).text
@@ -10,11 +13,17 @@ def getEmoticonInfo(url):
 
     return (eid, name)
 
-def getEmoticonType(eid):
-    for ext in exts:
-        if requests.get(dw_url.format(eid=eid, num=1, ext=ext)).status_code == 200:
-            return ext
+def is_decrypt_required(ext):
+    if ext in decrypt_required_exts:
+        return True
+    
+    if ext in no_decrypt_required_exts:
+        return False
+        
     raise Exception("Unknown Type")
 
-def getEmoticonUrl(eid, etype, num):
-    return dw_url.format(eid=eid, ext=etype, num=num)
+def getEmoticonImageUrl(eid, etype, num):
+    return image_url.format(eid=eid, ext=etype, num=num)
+    
+def getEmoticonPackUrl(eid):
+    return pack_url.format(eid=eid)
