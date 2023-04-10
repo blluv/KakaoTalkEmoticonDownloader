@@ -7,9 +7,11 @@ decrypt_required_exts = [".gif", ".webp"]
 no_decrypt_required_exts = [".png"]
 
 def getEmoticonInfo(url):
-    html = requests.get(url, headers={"User-Agent":"Android"}).text
+    response = requests.get(url, headers={"User-Agent":"Android"})
+    response.encoding = "utf-8"
+    html = response.text
     eid = html.split("kakaotalk://store/emoticon/")[1].split("?")[0]
-    name = html.split("| ")[1].split("\"")[0]
+    name = html.split("<title>")[1].split("</title>")[0]
 
     return (eid, name)
 
