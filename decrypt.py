@@ -1,55 +1,49 @@
-def generateLFSR(key):
-    d = list(key*2)
-    seq=[0,0,0]
+def generateLFSR(key: bytes):
+    key = key * 2
+    state = [0x12000032, 0x2527ac91, 0x888c1214]
 
-    seq[0] = 301989938
-    seq[1] = 623357073
-    seq[2] = -2004086252
+    for i in range(4):
+        state[0] = key[i] | (state[0] << 8)
+        state[1] = key[4+i] | (state[1] << 8)
+        state[2] = key[8+i] | (state[2] << 8)
 
-    i = 0
+    state[0] &= 0xffffffff
+    state[1] &= 0xffffffff
+    state[2] &= 0xffffffff
 
-    for i in range(0, 4):
-        seq[0] = ord(d[i]) | (seq[0] << 8)
-        seq[1] = ord(d[4+i]) | (seq[1] << 8)
-        seq[2] = ord(d[8+i]) | (seq[2] << 8)
+    return state
 
-    seq[0] = seq[0] & 0xffffffff
-    seq[1] = seq[1] & 0xffffffff
-    seq[2] = seq[2] & 0xffffffff
 
-    return seq
-
-def xorByte(b, seq):
-    flag1=1
-    flag2=0
-    result=0
-    for _ in range(0, 8):
-        v10 = (seq[0] >> 1)
-        if (seq[0] << 31) & 0xffffffff:
-            seq[0] = (v10 ^ 0xC0000031)
-            v12 = (seq[1] >> 1)
-            if (seq[1] << 31) & 0xffffffff:
-                seq[1] = ((v12 | 0xC0000000) ^ 0x20000010)
-                flag1 = 1
+def xorByte(byte, state):
+    flag1 = 1
+    flag2 = 0
+    res = 0
+    for _ in range(8):
+        aa = state[0] >> 1
+        if state[0] & 1:
+            state[0] = aa ^ 0xC0000031
+            bb = state[1] >> 1
+            flag1 = state[1] & 1
+            if flag1:
+                state[1] = ((bb | 0xC0000000) ^ 0x20000010)
             else:
-                seq[1] = (v12 & 0x3FFFFFFF)
-                flag1 = 0
+                state[1] = bb & 0x3FFFFFFF
         else:
-            seq[0] = v10
-            v11 = (seq[2] >> 1)
-            if (seq[2] << 31) & 0xffffffff:
-                seq[2] = ((v11 | 0xF0000000) ^ 0x8000001)
-                flag2 = 1
+            state[0] = aa
+            c = state[2] >> 1
+            flag2 = state[2] & 1
+            if flag2:
+                state[2] = ((c | 0xF0000000) ^ 0x8000001)
             else:
-                seq[2] = (v11 & 0xFFFFFFF)
-                flag2 = 0
+                state[2] = c & 0xFFFFFFF
 
-        result = (flag1 ^ flag2 | 2 * result)
-    return (result ^ b)
+        res = (flag1 ^ flag2) | (res << 1)
+    return res ^ byte
+
 
 def xorData(data):
-    dat=list(data)
-    s=generateLFSR("a271730728cbe141e47fd9d677e9006d")
-    for i in range(0,128):
-        dat[i]=xorByte(dat[i], s)
+    dat = list(data)
+    s = generateLFSR(b"a271730728cbe141e47fd9d677e9006d")
+    for i in range(0, 128):
+        dat[i] = xorByte(dat[i], s)
     return bytes(dat)
